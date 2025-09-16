@@ -1,0 +1,19 @@
+# Web UI
+streamlit>=1.36
+
+# Google Drive API
+google-api-python-client>=2.136
+google-auth>=2.35
+google-auth-httplib2>=0.2
+google-auth-oauthlib>=1.2
+
+# ORM & data
+SQLAlchemy>=2.0.36,<2.1
+python-dateutil>=2.8,<3
+pandas==2.2.3
+
+# Locking voor lokale/optionele varianten (niet strikt nodig in Streamlit)
+portalocker==2.10.1
+
+# (optioneel) toekomstig Postgres:
+# psycopg2-binary==2.9.9
