@@ -13,6 +13,18 @@ st.set_page_config(page_title="Vakantie Rooster", layout="wide")
 
 # ---------------------- DB bootstrap (Drive -> lokaal) ----------------------
 @st.cache_resource
+# --- Secrets quick self-test ---
+try:
+    raw = st.secrets["drive"].get("SERVICE_ACCOUNT_JSON")
+    assert raw, "SERVICE_ACCOUNT_JSON ontbreekt."
+    # Als het een string is: proberen te parsen
+    if isinstance(raw, str):
+        _ = json.loads(raw.lstrip("\ufeff").strip())
+    st.success("Secrets check: OK (SERVICE_ACCOUNT_JSON leesbaar).")
+except Exception as e:
+    st.error(f"Secrets check: FOUT — {e}")
+    st.stop()
+
 def _bootstrap_db():
     tmpdir = tempfile.mkdtemp(prefix="vakantie-rooster_")
     local_db_path = os.path.join(tmpdir, "vakantierooster.db")
