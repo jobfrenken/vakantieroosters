@@ -8,30 +8,34 @@ import streamlit as st
 _SCOPES = ["https://www.googleapis.com/auth/drive"]
 
 def _drive():
-    raw = st.secrets["drive"].get("SERVICE_ACCOUNT_JSON", None)
-    if raw is None:
-        raise RuntimeError("SERVICE_ACCOUNT_JSON ontbreekt in Secrets.")
-
-    # Accepteer zowel string (JSON) als dict (als iemand het als TOML-subtable zette)
-    if isinstance(raw, dict):
-        info = dict(raw)
-    elif isinstance(raw, str):
-        s = raw.lstrip("\ufeff").strip()  # verwijder BOM/leading whitespace voor de zekerheid
-        try:
-            info = json.loads(s)
-        except Exception as e:
-            raise RuntimeError(
-                "SERVICE_ACCOUNT_JSON is geen geldige JSON.\n"
-                "- Gebruik rechte quotes (\").\n"
-                "- Geen trailing commas.\n"
-                "- Plak de Google key 1-op-1; 'private_key' moet \\n bevatten (géén echte enters).\n"
-                "- Geen backticks/markdown in Secrets.\n"
-            ) from e
+    # 1) Voorkeur: TOML subtable [drive.service_account] => dict
+    sa = st.secrets["drive"].get("service_account")
+    if isinstance(sa, dict):
+        info = dict(sa)
     else:
-        raise RuntimeError("SERVICE_ACCOUNT_JSON heeft een onbekend type in Secrets.")
+        # 2) Back-up: JSON-string in SERVICE_ACCOUNT_JSON
+        raw = st.secrets["drive"].get("SERVICE_ACCOUNT_JSON")
+        if raw is None:
+            raise RuntimeError(
+                "Service-account ontbreekt. Zet óf [drive.service_account] (TOML) óf SERVICE_ACCOUNT_JSON (JSON) in Secrets."
+            )
+        if isinstance(raw, dict):
+            info = dict(raw)
+        elif isinstance(raw, str):
+            s = raw.lstrip("\ufeff").strip()
+            try:
+                info = json.loads(s)
+            except Exception as e:
+                raise RuntimeError(
+                    "SERVICE_ACCOUNT_JSON is geen geldige JSON. "
+                    "Tip: gebruik liever [drive.service_account] als TOML-subtable met echte regeleinden in private_key."
+                ) from e
+        else:
+            raise RuntimeError("Onbekend type voor service-account secrets.")
 
     creds = service_account.Credentials.from_service_account_info(info, scopes=_SCOPES)
     return build("drive", "v3", credentials=creds, cache_discovery=False)
+
 
 
 def download_db(local_path: str) -> dict:
